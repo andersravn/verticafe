@@ -12,11 +12,18 @@ import {
 } from "@chakra-ui/react";
 
 export async function getServerSideProps() {
-  const auth = await google.auth.getClient({
-    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-  });
+  const scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"];
 
-  const sheets = google.sheets({ version: "v4", auth });
+  const jwt = new google.auth.JWT(
+    process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
+    null,
+    // we need to replace the escaped newline characters
+    // https://stackoverflow.com/questions/50299329/node-js-firebase-service-account-private-key-wont-parse
+    process.env.GOOGLE_SHEETS_PRIVATE_KEY.replace(/\\n/g, "\n"),
+    scopes
+  );
+
+  const sheets = google.sheets({ version: "v4", auth: jwt });
 
   const typesRange = `S1!B1:F1`;
   const typesResponse = await sheets.spreadsheets.values.get({
